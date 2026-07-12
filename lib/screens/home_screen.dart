@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
+import 'packages_screen.dart';
 
 /// HomeScreen: balance card + Buy Wi-Fi + usage stats.
 /// Values are hardcoded for now (Ksh 100.00, 30:00, 50 MB) — proving
@@ -49,7 +50,12 @@ class HomeScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PackagesScreen()),
+                  );
+                },
                   child: const Text('BUY WI-FI'),
                 ),
               ),
