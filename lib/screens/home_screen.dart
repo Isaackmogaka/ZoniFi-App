@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/zonifi_top_bar.dart';
+
+/// HomeScreen: balance card + Buy Wi-Fi + usage stats.
+/// Values are hardcoded for now (Ksh 100.00, 30:00, 50 MB) — proving
+/// the layout is correct. Real data comes from state management later.
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ZonifiTopBar(showBackButton: true),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.navy,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Balance',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Ksh 100.00',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  child: const Text('BUY WI-FI'),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Usage',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: AppColors.navy,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _buildStat(value: '30:00', label: 'remaining'),
+                  Container(
+                    width: 1,
+                    height: 32,
+                    color: AppColors.slate200,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  _buildStat(value: '50 MB', label: 'used'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Row(
+                children: [
+                  Icon(Icons.wifi_off, size: 14, color: AppColors.slate400),
+                  SizedBox(width: 6),
+                  Text(
+                    'Disconnected',
+                    style: TextStyle(color: AppColors.slate400, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStat({required String value, required String label}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+            color: AppColors.navy,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.slate400),
+        ),
+      ],
+    );
+  }
+}

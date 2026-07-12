@@ -1,0 +1,207 @@
+import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/zonifi_top_bar.dart';
+
+/// A plain data class describing one package — not a widget, just a
+/// data shape. Makes adding a 5th package later a one-line change.
+class WifiPackage {
+  final String label;
+  final String subtitle;
+  final bool isPopular;
+
+  const WifiPackage({
+    required this.label,
+    required this.subtitle,
+    this.isPopular = false,
+  });
+}
+
+/// PackagesScreen: our FIRST StatefulWidget. Tapping a tile must
+/// visually update THIS screen immediately — that need is what makes
+/// it stateful rather than stateless.
+class PackagesScreen extends StatefulWidget {
+  const PackagesScreen({super.key});
+
+  @override
+  State<PackagesScreen> createState() => _PackagesScreenState();
+}
+
+class _PackagesScreenState extends State<PackagesScreen> {
+  // Mutable state: which tile is currently selected. Starts at 1
+  // (Ksh 20, the popular one) as a sensible default.
+  int _selectedIndex = 1;
+
+  final List<WifiPackage> _packages = const [
+    WifiPackage(label: 'Ksh 10', subtitle: '50 MB · 30 min'),
+    WifiPackage(label: 'Ksh 20', subtitle: '150 MB · 1 hr', isPopular: true),
+    WifiPackage(label: 'Ksh 50', subtitle: '400 MB · 3 hr'),
+    WifiPackage(label: 'Ksh 100', subtitle: '1 GB · 8 hr'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ZonifiTopBar(showBackButton: true),
+              const SizedBox(height: 8),
+              const Text(
+                'Select an amount to purchase Wi-Fi access',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: AppColors.navy,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: _packages.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return _PackageTile(
+                      package: _packages[index],
+                      isSelected: _selectedIndex == index,
+                      onTap: () {
+                        // setState() does two things: updates the
+                        // variable, AND tells Flutter "redraw this
+                        // screen now." Without it, _selectedIndex
+                        // would change internally but nothing on
+                        // screen would update.
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.navy,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {},
+                    child: Text(
+                      'Continue with ${_packages[_selectedIndex].label}',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// _PackageTile: one selectable row. STATELESS itself — it doesn't
+/// track its own "am I selected" state, it's simply TOLD by its
+/// parent via `isSelected`. Only one tile can be selected at a time,
+/// so that fact has to live in the parent, which can see all four
+/// tiles at once.
+class _PackageTile extends StatelessWidget {
+  final WifiPackage package;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PackageTile({
+    required this.package,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.teal : AppColors.slate200,
+            width: 2,
+          ),
+          color: isSelected ? const Color(0xFFF0FDFA) : Colors.white,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      package.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                    if (package.isPopular) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.yellow,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'MOST POPULAR',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  package.subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.slate400,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.teal : Colors.white,
+                border: Border.all(
+                  color: isSelected ? AppColors.teal : AppColors.slate200,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 13, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
