@@ -59,7 +59,7 @@ class ErrorScreen extends StatelessWidget {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                         ),
-                        onPressed: () {},
+                        onPressed: () => Navigator.pop(context),
                         child: const Text('Try again'),
                       ),
                     ],

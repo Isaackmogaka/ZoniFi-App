@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
+import 'connected_screen.dart';
+import 'error_screen.dart';
 
 class PurchasingScreen extends StatelessWidget {
   const PurchasingScreen({super.key});
@@ -61,6 +63,29 @@ class PurchasingScreen extends StatelessWidget {
                       const Text(
                         'Waiting for confirmation…',
                         style: TextStyle(fontSize: 11, color: AppColors.slate400),
+                      ),
+                      const SizedBox(height: 32),
+                      // TEMPORARY, Phase 2 only: these two buttons let us
+                      // manually test both outcomes of a purchase, since
+                      // the real M-Pesa success/failure simulation comes
+                      // in Phase 6. Remove these once that logic exists.
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ConnectedScreen()),
+                          );
+                        },
+                        child: const Text('(test) Simulate success'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ErrorScreen()),
+                          );
+                        },
+                        child: const Text('(test) Simulate failure'),
                       ),
                     ],
                   ),
