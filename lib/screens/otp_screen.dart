@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'home_screen.dart';
 
 /// OtpScreen: the 6-digit code verification step after LoginScreen.
 ///
@@ -90,7 +91,12 @@ class _OtpScreenState extends State<OtpScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {}, // Phase 2: navigate to HomeScreen
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    );
+                  },
                   child: const Text('Verify'),
                 ),
               ),
