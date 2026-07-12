@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import 'screens/login_screen.dart';
+import 'screens/otp_screen.dart';
 
 void main() {
   runApp(const ZonifiApp());
@@ -15,7 +15,7 @@ class ZonifiApp extends StatelessWidget {
       title: 'Zonifi',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const LoginScreen(),
+      home: const OtpScreen(),q
     );
   }
 }
