@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'otp_screen.dart';
 
 /// LoginScreen: collects a phone number, then (in the real app) sends
 /// an OTP via SMS. Replaces the earlier email/password version — a
@@ -93,7 +94,12 @@ class LoginScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {}, // Phase 2: navigate to OtpScreen
+                  onPressed: () {
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(builder: (context) => const OtpScreen()),
+                     );
+                   },
                   child: const Text('Send code'),
                 ),
               ),
