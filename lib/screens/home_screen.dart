@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ZonifiTopBar(showBackButton: true),
+              const ZonifiTopBar(showBackButton: false),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,

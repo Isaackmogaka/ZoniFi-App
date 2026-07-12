@@ -24,10 +24,13 @@ class ZonifiTopBar extends StatelessWidget {
               Positioned(
                 left: 16,
                 top: 4,
-                child: Icon(
-                  Icons.chevron_left,
-                  color: AppColors.navy,
-                  size: 22,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(
+                    Icons.chevron_left,
+                    color: AppColors.navy,
+                    size: 22,
+                  ),
                 ),
               ),
             Column(
