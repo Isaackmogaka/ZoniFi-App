@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
+import 'purchasing_screen.dart';
 
 /// A plain data class describing one package — not a widget, just a
 /// data shape. Makes adding a 5th package later a one-line change.
@@ -89,7 +90,12 @@ class _PackagesScreenState extends State<PackagesScreen> {
                       backgroundColor: AppColors.navy,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PurchasingScreen()),
+                      );
+                    },
                     child: Text(
                       'Continue with ${_packages[_selectedIndex].label}',
                     ),
