@@ -79,24 +79,37 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _buildStat(value: '30:00', label: 'remaining'),
+                  _buildStat(
+                    value: _formatDuration(wallet.secondsRemaining),
+                    label: 'remaining',
+                  ),
                   Container(
                     width: 1,
                     height: 32,
                     color: AppColors.slate200,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  _buildStat(value: '50 MB', label: 'used'),
+                  _buildStat(
+                    value: wallet.lastPackageLabel ?? '—',
+                    label: 'last package',
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.wifi_off, size: 14, color: AppColors.slate400),
-                  SizedBox(width: 6),
+                  Icon(
+                    wallet.isConnected ? Icons.wifi : Icons.wifi_off,
+                    size: 14,
+                    color: wallet.isConnected ? AppColors.teal : AppColors.slate400,
+                  ),
+                  const SizedBox(width: 6),
                   Text(
-                    'Disconnected',
-                    style: TextStyle(color: AppColors.slate400, fontSize: 12),
+                    wallet.isConnected ? 'Connected' : 'Disconnected',
+                    style: TextStyle(
+                      color: wallet.isConnected ? AppColors.teal : AppColors.slate400,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -105,6 +118,15 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Converts a raw seconds count into "MM:SS" display format, e.g.
+  /// 1800 seconds becomes "30:00". padLeft(2, '0') ensures single
+  /// digits show as "05" instead of "5", matching the mockup's format.
+  String _formatDuration(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   Widget _buildStat({required String value, required String label}) {
