@@ -9,10 +9,14 @@ class WifiPackage {
   final String label;
   final String subtitle;
   final bool isPopular;
+  final double cost;
+  final int durationSeconds;
 
   const WifiPackage({
     required this.label,
     required this.subtitle,
+    required this.cost,
+    required this.durationSeconds,
     this.isPopular = false,
   });
 }
@@ -33,10 +37,31 @@ class _PackagesScreenState extends State<PackagesScreen> {
   int _selectedIndex = 1;
 
   final List<WifiPackage> _packages = const [
-    WifiPackage(label: 'Ksh 10', subtitle: '50 MB · 30 min'),
-    WifiPackage(label: 'Ksh 20', subtitle: '150 MB · 1 hr', isPopular: true),
-    WifiPackage(label: 'Ksh 50', subtitle: '400 MB · 3 hr'),
-    WifiPackage(label: 'Ksh 100', subtitle: '1 GB · 8 hr'),
+    WifiPackage(
+      label: 'Ksh 10',
+      subtitle: '50 MB · 30 min',
+      cost: 10.0,
+      durationSeconds: 30 * 60,
+    ),
+    WifiPackage(
+      label: 'Ksh 20',
+      subtitle: '150 MB · 1 hr',
+      cost: 20.0,
+      durationSeconds: 60 * 60,
+      isPopular: true,
+    ),
+    WifiPackage(
+      label: 'Ksh 50',
+      subtitle: '400 MB · 3 hr',
+      cost: 50.0,
+      durationSeconds: 3 * 60 * 60,
+    ),
+    WifiPackage(
+      label: 'Ksh 100',
+      subtitle: '1 GB · 8 hr',
+      cost: 100.0,
+      durationSeconds: 8 * 60 * 60,
+    ),
   ];
 
   @override
@@ -93,7 +118,11 @@ class _PackagesScreenState extends State<PackagesScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const PurchasingScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => PurchasingScreen(
+                            package: _packages[_selectedIndex],
+                          ),
+                        ),
                       );
                     },
                     child: Text(
