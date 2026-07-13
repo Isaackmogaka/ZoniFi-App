@@ -51,9 +51,9 @@ class PurchasingScreen extends StatelessWidget {
                             color: AppColors.slate400,
                             height: 1.5,
                           ),
-                          children: const [
-                            TextSpan(text: "We've sent an M-Pesa prompt to "),
-                            TextSpan(
+                          children: [
+                            const TextSpan(text: "We've sent an M-Pesa prompt to "),
+                            const TextSpan(
                               text: '07XX XXX XXX',
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
