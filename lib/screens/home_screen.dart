@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
+import '../state/wallet_state.dart';
 import 'packages_screen.dart';
 
 /// HomeScreen: balance card + Buy Wi-Fi + usage stats.
@@ -11,6 +13,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // context.watch<WalletState>() does two things: grabs the current
+    // value right now, AND tells Flutter "rebuild this widget whenever
+    // WalletState calls notifyListeners()." No setState() needed here
+    // — Provider handles triggering the rebuild for us.
+    final wallet = context.watch<WalletState>();
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -36,8 +44,8 @@ class HomeScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Ksh 100.00',
-                      style: TextStyle(
+                      'Ksh ${wallet.balance.toStringAsFixed(2)}',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
