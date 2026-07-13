@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import '../widgets/zonifi_top_bar.dart';
+import '../state/wallet_state.dart';
+import 'packages_screen.dart';
 import 'connected_screen.dart';
 import 'error_screen.dart';
 
 class PurchasingScreen extends StatelessWidget {
-  const PurchasingScreen({super.key});
+  final WifiPackage package;
+
+  const PurchasingScreen({super.key, required this.package});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +58,7 @@ class PurchasingScreen extends StatelessWidget {
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                             TextSpan(
-                              text: '. Enter your PIN to complete the Ksh 20 purchase.',
+                              text: '. Enter your PIN to complete the ${package.label} purchase.',
                             ),
                           ],
                         ),
@@ -71,6 +76,16 @@ class PurchasingScreen extends StatelessWidget {
                       // in Phase 6. Remove these once that logic exists.
                       TextButton(
                         onPressed: () {
+                          // context.read (not watch) — this is a one-time
+                          // action inside a callback, not something that
+                          // needs to rebuild this widget. read() grabs
+                          // the current WalletState once and calls a
+                          // method on it.
+                          context.read<WalletState>().startSession(
+                                cost: package.cost,
+                                durationSeconds: package.durationSeconds,
+                                packageLabel: package.label,
+                              );
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => const ConnectedScreen()),
