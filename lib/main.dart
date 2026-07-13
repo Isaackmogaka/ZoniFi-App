@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
+import 'state/wallet_state.dart';
 
 void main() {
-  runApp(const ZonifiApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => WalletState(),
+      child: const ZonifiApp(),
+    ),
+  );
 }
 
 class ZonifiApp extends StatelessWidget {
