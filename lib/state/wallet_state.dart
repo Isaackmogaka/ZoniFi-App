@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// WalletState: the single shared source of truth for balance,
@@ -20,6 +21,12 @@ class WalletState extends ChangeNotifier {
   bool _isConnected = false;
   int _secondsRemaining = 0;
   String? _lastPackageLabel;
+
+  // Timer? (nullable) — no timer is running until a session actually
+  // starts. We hold a reference to it so we can cancel it later (e.g.
+  // if the user disconnects early, or a new session starts while an
+  // old one is somehow still ticking).
+  Timer? _countdownTimer;
 
   // Getters: the only way OUTSIDE code can READ these values. Plain
   // and read-only from the outside — this is a common Dart pattern
@@ -45,6 +52,11 @@ class WalletState extends ChangeNotifier {
     _secondsRemaining = durationSeconds;
     _lastPackageLabel = packageLabel;
 
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      tick();
+    });
+
     // THIS is the actual moment the "announcement" happens. Every
     // widget listening to WalletState gets told "something changed,
     // rebuild yourself" right here.
@@ -58,9 +70,21 @@ class WalletState extends ChangeNotifier {
       _secondsRemaining--;
       if (_secondsRemaining == 0) {
         _isConnected = false;
+        _countdownTimer?.cancel();
+        _countdownTimer = null;
       }
       notifyListeners();
     }
+  }
+
+  /// Cleans up the timer if this WalletState is ever destroyed.
+  /// Every Timer, StreamSubscription, or AnimationController you
+  /// create manually in Flutter needs an explicit cleanup like this —
+  /// Flutter doesn't automatically know to stop them for you.
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   /// Adds funds to the balance — e.g. after a top-up purchase.
