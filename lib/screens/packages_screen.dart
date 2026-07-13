@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
+import '../state/wallet_state.dart';
 import 'purchasing_screen.dart';
 
 /// A plain data class describing one package — not a widget, just a
@@ -66,6 +68,10 @@ class _PackagesScreenState extends State<PackagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final wallet = context.watch<WalletState>();
+    final selectedPackage = _packages[_selectedIndex];
+    final canAfford = wallet.balance >= selectedPackage.cost;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -112,10 +118,10 @@ class _PackagesScreenState extends State<PackagesScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                      foregroundColor: Colors.white,
+                      backgroundColor: canAfford ? AppColors.navy : AppColors.slate200,
+                      foregroundColor: canAfford ? Colors.white : AppColors.slate400,
                     ),
-                    onPressed: () {
+                    onPressed: !canAfford ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -126,7 +132,9 @@ class _PackagesScreenState extends State<PackagesScreen> {
                       );
                     },
                     child: Text(
-                      'Continue with ${_packages[_selectedIndex].label}',
+                      canAfford
+                          ? 'Continue with ${selectedPackage.label}'
+                          : 'Insufficient balance',
                     ),
                   ),
                 ),

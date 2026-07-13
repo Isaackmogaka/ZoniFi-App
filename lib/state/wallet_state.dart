@@ -32,11 +32,14 @@ class WalletState extends ChangeNotifier {
 
   /// Called when a package purchase succeeds. Deducts the cost from
   /// balance, marks the user as connected, and starts the countdown.
-  void startSession({
+  bool startSession({
     required double cost,
     required int durationSeconds,
     required String packageLabel,
   }) {
+    if (_balance < cost) {
+      return false;
+    }
     _balance -= cost;
     _isConnected = true;
     _secondsRemaining = durationSeconds;
@@ -46,6 +49,7 @@ class WalletState extends ChangeNotifier {
     // widget listening to WalletState gets told "something changed,
     // rebuild yourself" right here.
     notifyListeners();
+    return true;
   }
 
   /// Called every second by a Timer (Phase 4) to count down.

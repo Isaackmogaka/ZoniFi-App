@@ -81,14 +81,17 @@ class PurchasingScreen extends StatelessWidget {
                           // needs to rebuild this widget. read() grabs
                           // the current WalletState once and calls a
                           // method on it.
-                          context.read<WalletState>().startSession(
+                          final success = context.read<WalletState>().startSession(
                                 cost: package.cost,
                                 durationSeconds: package.durationSeconds,
                                 packageLabel: package.label,
                               );
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const ConnectedScreen()),
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  success ? const ConnectedScreen() : const ErrorScreen(),
+                            ),
                           );
                         },
                         child: const Text('(test) Simulate success'),
