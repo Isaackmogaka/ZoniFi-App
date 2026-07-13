@@ -35,10 +35,10 @@ class HomeScreen extends StatelessWidget {
                   color: AppColors.navy,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Balance',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
