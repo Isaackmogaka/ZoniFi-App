@@ -5,25 +5,13 @@ import '../widgets/zonifi_top_bar.dart';
 import '../state/wallet_state.dart';
 import 'packages_screen.dart';
 
-/// ConnectedScreen: shows the radial countdown ring, now reading LIVE
-/// data from WalletState instead of a hardcoded 95%. Also handles the
-/// case where the session has expired while the user is looking at
-/// this exact screen — showing an in-place "expired" state rather
-/// than silently navigating them elsewhere, matching how most real
-/// prepaid data apps (Safaricom, MTN, hotel/airport WiFi portals)
-/// handle expiry.
 class ConnectedScreen extends StatelessWidget {
   const ConnectedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // watch() here means this whole screen rebuilds every second, since
-    // WalletState calls notifyListeners() on every tick(). That's
-    // exactly what we want — this IS the live countdown.
     final wallet = context.watch<WalletState>();
 
-    // Guard against dividing by zero if this screen is somehow shown
-    // before any session has started.
     final progress = wallet.totalSessionSeconds > 0
         ? wallet.secondsRemaining / wallet.totalSessionSeconds
         : 0.0;
@@ -46,7 +34,6 @@ class ConnectedScreen extends StatelessWidget {
     );
   }
 
-  /// The normal "still connected, counting down" view.
   Widget _buildConnectedContent(WalletState wallet, double progress) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -96,9 +83,6 @@ class ConnectedScreen extends StatelessWidget {
     );
   }
 
-  /// Shown the moment secondsRemaining hits 0 while the user is still
-  /// on this screen — an in-place expired state with a clear next
-  /// action, rather than silently redirecting them elsewhere.
   Widget _buildExpiredContent(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -158,7 +142,6 @@ class ConnectedScreen extends StatelessWidget {
   }
 }
 
-/// _RingPainter: unchanged from before — draws the actual ring shape.
 class _RingPainter extends CustomPainter {
   final double progress;
 
