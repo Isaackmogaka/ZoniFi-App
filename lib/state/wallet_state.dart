@@ -24,15 +24,32 @@ class WalletState extends ChangeNotifier {
       return false;
     }
     _balance -= cost;
-    _isConnected = true;
-    _secondsRemaining = durationSeconds;
-    _totalSessionSeconds = durationSeconds;
-    _lastPackageLabel = packageLabel;
 
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      tick();
-    });
+    if (_isConnected) {
+      // TOP-UP CASE: user is already connected and buying more time.
+      // ADD to what's remaining instead of overwriting it — otherwise
+      // topping up with a shorter package would actually shorten
+      // their remaining time, which makes no sense from a paying
+      // user's perspective.
+      _secondsRemaining += durationSeconds;
+      _totalSessionSeconds += durationSeconds;
+      _lastPackageLabel = packageLabel;
+      // The Timer is already running from the original purchase — we
+      // don't touch it here. It will simply keep counting down the
+      // now-larger _secondsRemaining value automatically.
+    } else {
+      // FRESH PURCHASE CASE: nothing was running before, so set
+      // everything cleanly and start a brand new timer.
+      _isConnected = true;
+      _secondsRemaining = durationSeconds;
+      _totalSessionSeconds = durationSeconds;
+      _lastPackageLabel = packageLabel;
+
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        tick();
+      });
+    }
 
     notifyListeners();
     return true;
