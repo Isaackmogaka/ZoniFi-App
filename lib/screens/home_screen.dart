@@ -5,18 +5,11 @@ import '../widgets/zonifi_top_bar.dart';
 import '../state/wallet_state.dart';
 import 'packages_screen.dart';
 
-/// HomeScreen: balance card + Buy Wi-Fi + usage stats.
-/// Values are hardcoded for now (Ksh 100.00, 30:00, 50 MB) — proving
-/// the layout is correct. Real data comes from state management later.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // context.watch<WalletState>() does two things: grabs the current
-    // value right now, AND tells Flutter "rebuild this widget whenever
-    // WalletState calls notifyListeners()." No setState() needed here
-    // — Provider handles triggering the rebuild for us.
     final wallet = context.watch<WalletState>();
 
     return Scaffold(
@@ -42,14 +35,27 @@ class HomeScreen extends StatelessWidget {
                       'Balance',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Ksh ${wallet.balance.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    const SizedBox(height: 4),
+                    // TweenAnimationBuilder automatically retargets from
+                    // whatever value it's CURRENTLY showing to the new
+                    // wallet.balance, every time this rebuilds — no
+                    // manual "previous value" tracking needed. The
+                    // begin: 0 below only matters on the very first
+                    // build; every change after that animates smoothly
+                    // from wherever it currently is.
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0, end: wallet.balance),
+                      duration: const Duration(milliseconds: 600),
+                      builder: (context, value, child) {
+                        return Text(
+                          'Ksh ${value.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -59,11 +65,11 @@ class HomeScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PackagesScreen()),
-                  );
-                },
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PackagesScreen()),
+                    );
+                  },
                   child: const Text('BUY WI-FI'),
                 ),
               ),
@@ -120,9 +126,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Converts a raw seconds count into "MM:SS" display format, e.g.
-  /// 1800 seconds becomes "30:00". padLeft(2, '0') ensures single
-  /// digits show as "05" instead of "5", matching the mockup's format.
   String _formatDuration(int totalSeconds) {
     final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
     final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
