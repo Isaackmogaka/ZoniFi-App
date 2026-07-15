@@ -94,7 +94,8 @@ class _PackagesScreenState extends State<PackagesScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _packages.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  
+    separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     return _PackageTile(
                       package: _packages[index],

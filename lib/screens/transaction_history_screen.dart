@@ -43,7 +43,7 @@ class TransactionHistoryScreen extends StatelessWidget {
                     ? _buildEmptyState()
                     : ListView.separated(
                         itemCount: transactions.length,
-                        separatorBuilder: (_, __) => const Divider(
+                        separatorBuilder: (_, _) => const Divider(
                           height: 1,
                           color: AppColors.slate200,
                         ),
