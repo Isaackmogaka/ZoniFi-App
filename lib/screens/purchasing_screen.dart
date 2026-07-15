@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/zonifi_top_bar.dart';
@@ -86,6 +87,69 @@ class PurchasingScreen extends StatelessWidget {
                                 durationSeconds: package.durationSeconds,
                                 packageLabel: package.label,
                               );
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+                          // Choose the haptic based on the REAL outcome,
+                          // not an assumption — startSession() can still
+                          // return false here if balance was insufficient,
+                          // even though this button is labeled "success."
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -98,6 +162,7 @@ class PurchasingScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
+                          HapticFeedback.vibrate();
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => const ErrorScreen()),
