@@ -4,6 +4,8 @@ import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
 import '../state/wallet_state.dart';
 import 'packages_screen.dart';
+import 'transaction_history_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -78,7 +80,8 @@ class HomeScreen extends StatelessWidget {
               // isConnected check in Phase 4. One condition, two
               // completely different widget trees.
               if (hasEverPurchased)
-                _buildUsageStats(wallet)
+                _buildUsageStats(context, wallet)
+
               else
                 _buildEmptyState(),
             ],
@@ -91,17 +94,42 @@ class HomeScreen extends StatelessWidget {
   /// The normal usage stats, shown once the user has bought at least
   /// one package. Unchanged from before, just extracted into its own
   /// method so build() stays readable now that there are two branches.
-  Widget _buildUsageStats(WalletState wallet) {
+  Widget _buildUsageStats(BuildContext context, WalletState wallet) {
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Usage',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 14,
-            color: AppColors.navy,
-          ),
+        
+Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Usage',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                color: AppColors.navy,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TransactionHistoryScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                'See all',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.teal,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Row(
