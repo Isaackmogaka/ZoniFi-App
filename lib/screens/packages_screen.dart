@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/zonifi_top_bar.dart';
@@ -166,7 +167,14 @@ class _PackageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        // A light, quick pulse — appropriate for a routine selection
+        // action, not a big confirmation. Distinguishing intensity by
+        // meaning (light for selection, stronger for success/error)
+        // is what makes haptics feel intentional rather than random.
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(14),
