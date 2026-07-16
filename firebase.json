@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"zonifi-app","appId":"1:352017042763:android:5c01df54548cef8afbecce","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"zonifi-app","configurations":{"android":"1:352017042763:android:5c01df54548cef8afbecce","web":"1:352017042763:web:fa3802c189b700a3fbecce"}}}}}}

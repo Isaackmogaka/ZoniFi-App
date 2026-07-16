@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352017042763",
+    "project_id": "zonifi-app",
+    "storage_bucket": "zonifi-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352017042763:android:5c01df54548cef8afbecce",
+        "android_client_info": {
+          "package_name": "com.example.zonifi_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjWFWvngOcXijXz8enpqORtySHRH1Cj2Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
