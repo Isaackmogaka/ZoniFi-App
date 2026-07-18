@@ -21,12 +21,14 @@ class WalletState extends ChangeNotifier {
   String? _lastPackageLabel;
   Timer? _countdownTimer;
   bool _isLoading = true; // true until Firestore data has loaded once
+  bool _hasLoadError = false;
   final List<model.Transaction> _transactions = [];
 
   double get balance => _balance;
   int get totalSessionSeconds => _totalSessionSeconds;
   String? get lastPackageLabel => _lastPackageLabel;
   bool get isLoading => _isLoading;
+  bool get hasLoadError => _hasLoadError;
   List<model.Transaction> get transactions => _transactions.reversed.toList();
 
   /// DERIVED, not stored: true only if we have an expiry time AND
@@ -47,7 +49,8 @@ class WalletState extends ChangeNotifier {
   /// existing data for this user from Firestore. Async, so screens
   /// see default values briefly before real data arrives — the
   /// isLoading flag lets UI show a loading state if desired.
-  Future<void> loadUserData() async {
+ Future<void> loadUserData() async {
+    try {
     final doc = await _firestore.collection('users').doc(_testUserId).get();
 
     if (doc.exists) {
@@ -70,6 +73,10 @@ class WalletState extends ChangeNotifier {
     }
 
     await _loadTransactions();
+      _hasLoadError = false;
+    } catch (e) {
+      _hasLoadError = true;
+    }
 
     _isLoading = false;
     notifyListeners();
