@@ -26,9 +26,23 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // We build WalletState ourselves here (rather than letting Provider
+  // build it via create:) specifically so we can call loadUserData()
+  // on this exact instance right after creating it.
+  final walletState = WalletState();
+
+  // Deliberately NOT awaited here. If we awaited this, the whole app
+  // would sit on a blank screen until Firestore responds. Instead, we
+  // let the app start immediately with default values, and
+  // loadUserData() will call notifyListeners() once real data
+  // arrives, updating the UI automatically at that point.
+  walletState.loadUserData();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => WalletState(),
+    // .value (not create:) because we already have a real instance
+    // to hand over, rather than asking Provider to construct one.
+    ChangeNotifierProvider.value(
+      value: walletState,
       child: const ZonifiApp(),
     ),
   );
