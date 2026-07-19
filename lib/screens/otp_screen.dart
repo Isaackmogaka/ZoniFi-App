@@ -1,43 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
-/// OtpScreen: the 6-digit code verification step after LoginScreen.
-///
-/// WHY STATEFUL: as the user types each digit, we need to (a) track
-/// what's been typed so far, and (b) automatically move the cursor to
-/// the next box. Both of those are "this screen's own data changing
-/// while it's alive" — the exact signal for StatefulWidget, same
-/// reasoning as PackagesScreen.
-///
-/// PHASE 1 SCOPE: tapping "Verify" does nothing real yet. No actual
-/// code is sent or checked — that's Firebase Phone Auth, Phase 5.
+/// OtpScreen: now requires the phone number from LoginScreen, so the
+/// "Code sent to..." text reflects what the user actually entered,
+/// instead of a hardcoded placeholder.
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key});
+  final String phoneNumber;
+
+  const OtpScreen({super.key, required this.phoneNumber});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  // One controller PER digit box. A TextEditingController is Flutter's
-  // way of reading/writing what's inside a TextField — we need 6
-  // separate ones since we have 6 separate boxes, not one field.
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
-
-  // FocusNode lets us programmatically move the keyboard's focus from
-  // one box to the next — this is what creates the "auto-advance"
-  // feel as you type, instead of manually tapping each box yourself.
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   @override
   void dispose() {
-    // Every controller and focus node we create must be manually
-    // cleaned up when this screen is removed, or it leaks memory.
-    // This is a Flutter-specific responsibility that doesn't exist in,
-    // say, plain HTML forms — Flutter doesn't clean these up for you
-    // automatically.
     for (final c in _controllers) {
       c.dispose();
     }
@@ -45,6 +29,40 @@ class _OtpScreenState extends State<OtpScreen> {
       f.dispose();
     }
     super.dispose();
+  }
+
+  /// True only when every one of the 6 boxes has a digit in it.
+  bool get _isComplete =>
+      _controllers.every((controller) => controller.text.isNotEmpty);
+
+  /// Called automatically the instant the 6th digit lands — no manual
+  /// "Verify" tap needed. In Phase 1/2 scope, this still just
+  /// navigates to Home; real code-checking against Firebase comes
+  /// once billing/Blaze is sorted for real SMS.
+  void _autoVerify() {
+    HapticFeedback.mediumImpact();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
+  }
+
+  /// Clears all 6 boxes, refocuses the first one, and gives the user
+  /// clear feedback that a new code was "sent" — real SMS resending
+  /// logic is Phase 5/6 work once Firebase Phone Auth is fully wired,
+  /// but the UI behavior itself is genuine now, not a dead link.
+  void _resendCode() {
+    HapticFeedback.lightImpact();
+    for (final controller in _controllers) {
+      controller.clear();
+    }
+    FocusScope.of(context).requestFocus(_focusNodes[0]);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('A new code has been sent'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -69,45 +87,43 @@ class _OtpScreenState extends State<OtpScreen> {
               Text.rich(
                 TextSpan(
                   style: const TextStyle(fontSize: 13, color: AppColors.slate400),
-                  children: const [
-                    TextSpan(text: 'Code sent to '),
+                  children: [
+                    const TextSpan(text: 'Code sent to '),
                     TextSpan(
-                      text: '+254 7XX XXX XXX',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      text: widget.phoneNumber,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Row of 6 boxes, evenly spaced using spaceBetween so
-              // they stay readable on both small and large phones.
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) => _buildDigitBox(index)),
               ),
-
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomeScreen()),
-                    );
-                  },
+                  // Still tappable manually too, in case someone
+                  // prefers pressing it rather than relying on
+                  // auto-advance — but disabled until complete, since
+                  // there's nothing valid to verify otherwise.
+                  onPressed: !_isComplete ? null : _autoVerify,
                   child: const Text('Verify'),
                 ),
               ),
               const SizedBox(height: 16),
               Center(
-                child: Text(
-                  "Didn't get a code? Resend",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.teal,
-                    fontWeight: FontWeight.w600,
+                child: GestureDetector(
+                  onTap: _resendCode,
+                  child: const Text(
+                    "Didn't get a code? Resend",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.teal,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -127,14 +143,14 @@ class _OtpScreenState extends State<OtpScreen> {
         focusNode: _focusNodes[index],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
-        maxLength: 1, // exactly one digit per box
+        maxLength: 1,
         style: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: AppColors.navy,
         ),
         decoration: InputDecoration(
-          counterText: '', // hides Flutter's default "0/1" character counter
+          counterText: '',
           filled: true,
           fillColor: const Color(0xFFF1F5F9),
           border: OutlineInputBorder(
@@ -142,16 +158,28 @@ class _OtpScreenState extends State<OtpScreen> {
             borderSide: BorderSide.none,
           ),
         ),
-        // onChanged fires every time the user types (or deletes) a
-        // character in THIS box. We use it to decide whether to jump
-        // focus forward (typed a digit) or backward (deleted a digit).
         onChanged: (value) {
           if (value.isNotEmpty && index < 5) {
-            // Move focus to the next box once this one has a digit.
             FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
           } else if (value.isEmpty && index > 0) {
-            // Move focus back if the user deleted a digit.
             FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
+          }
+
+          // Check completeness on EVERY keystroke (not just the last
+          // box), since the user could type out of order or paste —
+          // setState() triggers here so the Verify button's
+          // enabled/disabled state updates live too.
+          setState(() {});
+
+          // The instant all 6 are filled, auto-advance — no manual
+          // tap needed. We check this after the setState above so
+          // _isComplete reflects the very latest keystroke.
+          if (_isComplete) {
+            // Unfocus the keyboard first, since we're about to
+            // navigate away — leaving it focused can cause a visual
+            // flicker as the new screen builds underneath it.
+            FocusScope.of(context).unfocus();
+            _autoVerify();
           }
         },
       ),

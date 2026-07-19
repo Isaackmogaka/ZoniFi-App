@@ -234,7 +234,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OtpScreen(),
+                              builder: (context) => OtpScreen(
+                                phoneNumber:
+                                    '${_selectedCountry.dialCode} $_digitsOnly',
+                              ),
                             ),
                           );
                         },
