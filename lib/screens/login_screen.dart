@@ -22,11 +22,50 @@ class CountryCode {
 }
 
 const List<CountryCode> _countries = [
+  // East Africa
   CountryCode(name: 'Kenya', dialCode: '+254', expectedDigits: 9),
   CountryCode(name: 'Uganda', dialCode: '+256', expectedDigits: 9),
   CountryCode(name: 'Tanzania', dialCode: '+255', expectedDigits: 9),
+  CountryCode(name: 'Rwanda', dialCode: '+250', expectedDigits: 9),
+  CountryCode(name: 'Burundi', dialCode: '+257', expectedDigits: 8),
+  CountryCode(name: 'South Sudan', dialCode: '+211', expectedDigits: 9),
+  CountryCode(name: 'Ethiopia', dialCode: '+251', expectedDigits: 9),
+  CountryCode(name: 'Somalia', dialCode: '+252', expectedDigits: 8),
+  // West Africa
   CountryCode(name: 'Nigeria', dialCode: '+234', expectedDigits: 10),
+  CountryCode(name: 'Ghana', dialCode: '+233', expectedDigits: 9),
+  CountryCode(name: 'Senegal', dialCode: '+221', expectedDigits: 9),
+  CountryCode(name: 'Ivory Coast', dialCode: '+225', expectedDigits: 10),
+  CountryCode(name: 'Mali', dialCode: '+223', expectedDigits: 8),
+  // Southern Africa
   CountryCode(name: 'South Africa', dialCode: '+27', expectedDigits: 9),
+  CountryCode(name: 'Zimbabwe', dialCode: '+263', expectedDigits: 9),
+  CountryCode(name: 'Zambia', dialCode: '+260', expectedDigits: 9),
+  CountryCode(name: 'Botswana', dialCode: '+267', expectedDigits: 8),
+  CountryCode(name: 'Namibia', dialCode: '+264', expectedDigits: 9),
+  CountryCode(name: 'Mozambique', dialCode: '+258', expectedDigits: 9),
+  // North Africa
+  CountryCode(name: 'Egypt', dialCode: '+20', expectedDigits: 10),
+  CountryCode(name: 'Morocco', dialCode: '+212', expectedDigits: 9),
+  CountryCode(name: 'Algeria', dialCode: '+213', expectedDigits: 9),
+  CountryCode(name: 'Tunisia', dialCode: '+216', expectedDigits: 8),
+  // Middle East
+  CountryCode(name: 'United Arab Emirates', dialCode: '+971', expectedDigits: 9),
+  CountryCode(name: 'Saudi Arabia', dialCode: '+966', expectedDigits: 9),
+  // Europe
+  CountryCode(name: 'United Kingdom', dialCode: '+44', expectedDigits: 10),
+  CountryCode(name: 'Germany', dialCode: '+49', expectedDigits: 10),
+  CountryCode(name: 'France', dialCode: '+33', expectedDigits: 9),
+  // Asia
+  CountryCode(name: 'India', dialCode: '+91', expectedDigits: 10),
+  CountryCode(name: 'China', dialCode: '+86', expectedDigits: 11),
+  CountryCode(name: 'Pakistan', dialCode: '+92', expectedDigits: 10),
+  // Americas
+  CountryCode(name: 'United States', dialCode: '+1', expectedDigits: 10),
+  CountryCode(name: 'Canada', dialCode: '+1', expectedDigits: 10),
+  CountryCode(name: 'Brazil', dialCode: '+55', expectedDigits: 11),
+  // Oceania
+  CountryCode(name: 'Australia', dialCode: '+61', expectedDigits: 9),
 ];
 
 /// LoginScreen is now StatefulWidget — it needs to track two pieces
