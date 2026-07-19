@@ -2,18 +2,76 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'otp_screen.dart';
 
-/// LoginScreen: collects a phone number, then (in the real app) sends
-/// an OTP via SMS. Replaces the earlier email/password version — a
-/// better fit for the Kenyan market, where M-Pesa already ties almost
-/// every user to a phone number, and it skips "forgot password"
-/// entirely.
-///
-/// PHASE 1 RULE: still intentionally "dumb." Tapping "Send code" does
-/// nothing real yet — no actual SMS is sent. That requires Firebase
-/// Phone Auth, which is Phase 5 work. Right now we're only proving
-/// this layout is correct.
-class LoginScreen extends StatelessWidget {
+/// A small, plain data model: one selectable country, its dial code,
+/// and how many digits a valid local number should have. Kept to a
+/// short, honest list of countries rather than pretending to cover
+/// every country manually — a real production app would likely use a
+/// dedicated package (e.g. `country_code_picker`) for a complete,
+/// properly-maintained list. This hand-built version is enough to
+/// demonstrate the pattern and cover Kenya's immediate neighbors.
+class CountryCode {
+  final String name;
+  final String dialCode;
+  final int expectedDigits;
+
+  const CountryCode({
+    required this.name,
+    required this.dialCode,
+    required this.expectedDigits,
+  });
+}
+
+const List<CountryCode> _countries = [
+  CountryCode(name: 'Kenya', dialCode: '+254', expectedDigits: 9),
+  CountryCode(name: 'Uganda', dialCode: '+256', expectedDigits: 9),
+  CountryCode(name: 'Tanzania', dialCode: '+255', expectedDigits: 9),
+  CountryCode(name: 'Nigeria', dialCode: '+234', expectedDigits: 10),
+  CountryCode(name: 'South Africa', dialCode: '+27', expectedDigits: 9),
+];
+
+/// LoginScreen is now StatefulWidget — it needs to track two pieces
+/// of live-changing data: which country is selected, and how many
+/// digits have been typed so far, to decide whether "Send code"
+/// should be enabled.
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  CountryCode _selectedCountry = _countries[0]; // defaults to Kenya
+  final TextEditingController _phoneController = TextEditingController();
+  String _digitsOnly = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for every keystroke in the phone field, so we can
+    // re-check validity live as the user types, not just when they
+    // tap the button.
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  @override
+  void dispose() {
+    _phoneController.removeListener(_onPhoneChanged);
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  void _onPhoneChanged() {
+    // Strip out anything that isn't a digit (spaces, dashes people
+    // might type) so we're always validating against pure digit count,
+    // regardless of how the user chooses to format their input.
+    final digits = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    setState(() {
+      _digitsOnly = digits;
+    });
+  }
+
+  bool get _isValid => _digitsOnly.length == _selectedCountry.expectedDigits;
 
   @override
   Widget build(BuildContext context) {
@@ -36,41 +94,49 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 "We'll text you a code to verify it's you.",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.slate400,
-                ),
+                style: TextStyle(fontSize: 13, color: AppColors.slate400),
               ),
               const SizedBox(height: 32),
 
-              // The phone field is split into two parts: a fixed
-              // "+254" country-code prefix (Kenya), and the actual
-              // number field. Splitting them like this prevents users
-              // from accidentally typing the country code wrong or
-              // forgetting it — a common source of failed SMS delivery
-              // in real apps.
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
-                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      '+254',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<CountryCode>(
+                        value: _selectedCountry,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        borderRadius: BorderRadius.circular(10),
+                        items: _countries.map((country) {
+                          return DropdownMenuItem(
+                            value: country,
+                            child: Text(
+                              '${country.dialCode} ${country.name}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.navy,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (country) {
+                          if (country == null) return;
+                          setState(() {
+                            _selectedCountry = country;
+                          });
+                          _onPhoneChanged();
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
+                      controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
                         hintText: '7XX XXX XXX',
@@ -89,17 +155,37 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 8),
+
+              Text(
+                '${_digitsOnly.length}/${_selectedCountry.expectedDigits} digits',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: _isValid ? AppColors.teal : AppColors.slate400,
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(builder: (context) => const OtpScreen()),
-                     );
-                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _isValid ? AppColors.yellow : AppColors.slate200,
+                    foregroundColor:
+                        _isValid ? AppColors.navy : AppColors.slate400,
+                  ),
+                  onPressed: !_isValid
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OtpScreen(),
+                            ),
+                          );
+                        },
                   child: const Text('Send code'),
                 ),
               ),
