@@ -91,7 +91,7 @@ class WalletState extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
-  /// Now genuinely async (Future<bool> instead of bool), and the
+  /// Now genuinely async (`Future<bool>` instead of bool), and the
   /// Firestore writes are AWAITED inside a try/catch instead of being
   /// fire-and-forget. This is a deliberate UX choice, not just "make
   /// it safer": if the writes fail (no internet, brief Firestore
