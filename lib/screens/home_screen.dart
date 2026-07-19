@@ -6,101 +6,107 @@ import '../state/wallet_state.dart';
 import 'packages_screen.dart';
 import 'transaction_history_screen.dart';
 
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final wallet = context.watch<WalletState>();
-
-    // A simple, honest way to know if this user has EVER completed a
-    // purchase: lastPackageLabel only gets set inside startSession(),
-    // so null means "never bought anything," regardless of current
-    // balance or connection status.
     final hasEverPurchased = wallet.lastPackageLabel != null;
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ZonifiTopBar(showBackButton: false),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Balance',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+        // RefreshIndicator wraps scrollable content and gives the
+        // native "pull down, see a spinner, release to refresh"
+        // gesture for free. onRefresh must return a Future — the
+        // spinner stays visible until that Future completes, which is
+        // exactly what loadUserData() already gives us since it's
+        // async.
+        child: RefreshIndicator(
+          onRefresh: () => context.read<WalletState>().loadUserData(),
+          child: SingleChildScrollView(
+            // AlwaysScrollableScrollPhysics is important here: without
+            // it, RefreshIndicator's pull gesture only works when
+            // there's enough content to actually scroll. Since Home's
+            // content is often shorter than the screen (especially the
+            // empty state), this physics setting forces the pull
+            // gesture to work even when nothing needs to scroll yet.
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ZonifiTopBar(showBackButton: false),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 4),
-                    TweenAnimationBuilder<double>(
-                      tween: Tween<double>(begin: 0, end: wallet.balance),
-                      duration: const Duration(milliseconds: 600),
-                      builder: (context, value, child) {
-                        return Text(
-                          'Ksh ${value.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Balance',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: wallet.balance),
+                          duration: const Duration(milliseconds: 600),
+                          builder: (context, value, child) {
+                            return Text(
+                              'Ksh ${value.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const PackagesScreen()),
                         );
                       },
+                      child: const Text('BUY WI-FI'),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (hasEverPurchased)
+                    _buildUsageStats(context, wallet)
+                  else
+                    _buildEmptyState(),
+                  // A little extra bottom space so the last bit of
+                  // content isn't flush against the screen edge when
+                  // scrolled all the way down.
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PackagesScreen()),
-                    );
-                  },
-                  child: const Text('BUY WI-FI'),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // The branch point: same pattern as ConnectedScreen's
-              // isConnected check in Phase 4. One condition, two
-              // completely different widget trees.
-              if (hasEverPurchased)
-                _buildUsageStats(context, wallet)
-
-              else
-                _buildEmptyState(),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// The normal usage stats, shown once the user has bought at least
-  /// one package. Unchanged from before, just extracted into its own
-  /// method so build() stays readable now that there are two branches.
   Widget _buildUsageStats(BuildContext context, WalletState wallet) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        
-Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
@@ -172,9 +178,6 @@ Row(
     );
   }
 
-  /// Shown only the very first time — before any purchase has ever
-  /// happened. Replaces raw zeros and a lone dash with something that
-  /// actually explains what to do next.
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
