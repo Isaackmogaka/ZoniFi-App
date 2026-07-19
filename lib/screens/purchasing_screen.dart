@@ -71,92 +71,58 @@ class PurchasingScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 11, color: AppColors.slate400),
                       ),
                       const SizedBox(height: 32),
-                      // TEMPORARY, Phase 2 only: these two buttons let us
-                      // manually test both outcomes of a purchase, since
-                      // the real M-Pesa success/failure simulation comes
-                      // in Phase 6. Remove these once that logic exists.
                       TextButton(
-                        onPressed: () {
-                          // context.read (not watch) — this is a one-time
-                          // action inside a callback, not something that
-                          // needs to rebuild this widget. read() grabs
-                          // the current WalletState once and calls a
-                          // method on it.
-                          final success = context.read<WalletState>().startSession(
-                                cost: package.cost,
-                                durationSeconds: package.durationSeconds,
-                                packageLabel: package.label,
-                              );
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          // Choose the haptic based on the REAL outcome,
-                          // not an assumption — startSession() can still
-                          // return false here if balance was insufficient,
-                          // even though this button is labeled "success."
-                          if (success) {
-                            HapticFeedback.mediumImpact();
-                          } else {
-                            HapticFeedback.vibrate();
-                          }
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  success ? const ConnectedScreen() : const ErrorScreen(),
-                            ),
+                        // Marked async now, since we need to AWAIT
+                        // startSession() rather than just call it —
+                        // it genuinely takes time now (real Firestore
+                        // writes), not an instant local-only update.
+                        onPressed: () async {
+                          final wallet = context.read<WalletState>();
+                          final success = await wallet.startSession(
+                            cost: package.cost,
+                            durationSeconds: package.durationSeconds,
+                            packageLabel: package.label,
                           );
+
+                          if (success) {
+                            HapticFeedback.mediumImpact();
+                          } else {
+                            HapticFeedback.vibrate();
+                          }
+
+                          // If the purchase succeeded locally but
+                          // couldn't sync to Firestore (no internet,
+                          // etc.), warn the user clearly rather than
+                          // silently proceeding as if everything saved.
+                          if (success && wallet.hasSyncError) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Purchase saved on this device, but couldn't "
+                                    "sync — check your connection.",
+                                  ),
+                                  backgroundColor: AppColors.amber,
+                                  duration: Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          }
+
+                          // context.mounted check: after an `await`,
+                          // it's possible the user navigated away or
+                          // the widget was removed before this code
+                          // resumes. Using context after that can
+                          // crash — this check guards against that.
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    success ? const ConnectedScreen() : const ErrorScreen(),
+                              ),
+                            );
+                          }
                         },
                         child: const Text('(test) Simulate success'),
                       ),
