@@ -36,7 +36,7 @@ Future<void> main() async {
   // let the app start immediately with default values, and
   // loadUserData() will call notifyListeners() once real data
   // arrives, updating the UI automatically at that point.
-  walletState.loadUserData();
+  
 
   runApp(
     // .value (not create:) because we already have a real instance

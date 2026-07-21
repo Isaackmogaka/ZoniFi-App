@@ -4,7 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'transaction.dart' as model;
 
 class WalletState extends ChangeNotifier {
-  static const String _testUserId = 'test_user_1';
+  // No longer a hardcoded constant — this now starts null (no user
+  // yet) and gets set for real once someone actually signs in via
+  // Firebase Phone Auth. Every method below now checks that a user ID
+  // exists before trying to touch Firestore.
+  String? _userId;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -15,7 +19,7 @@ class WalletState extends ChangeNotifier {
   Timer? _countdownTimer;
   bool _isLoading = true;
   bool _hasLoadError = false;
-  bool _hasSyncError = false; // true if the LAST purchase failed to save to Firestore
+  bool _hasSyncError = false;
   final List<model.Transaction> _transactions = [];
 
   double get balance => _balance;
@@ -34,9 +38,24 @@ class WalletState extends ChangeNotifier {
     return _sessionExpiresAt!.difference(DateTime.now()).inSeconds;
   }
 
+  /// Called once, right after a successful sign-in (real Firebase
+  /// Phone Auth), to tell WalletState WHICH user's data to load and
+  /// save from now on. Everything else in this class stays exactly
+  /// the same as before — it doesn't care HOW we got a user ID, only
+  /// that it has one before touching Firestore.
+  Future<void> setUserId(String uid) async {
+    _userId = uid;
+    await loadUserData();
+  }
+
   Future<void> loadUserData() async {
+    // Guard: if somehow called before a real user ID is set, there's
+    // nothing to load — bail out safely rather than crashing on a
+    // null document path.
+    if (_userId == null) return;
+
     try {
-      final doc = await _firestore.collection('users').doc(_testUserId).get();
+      final doc = await _firestore.collection('users').doc(_userId).get();
 
       if (doc.exists) {
         final data = doc.data()!;
@@ -63,9 +82,11 @@ class WalletState extends ChangeNotifier {
   }
 
   Future<void> _loadTransactions() async {
+    if (_userId == null) return;
+
     final snapshot = await _firestore
         .collection('users')
-        .doc(_testUserId)
+        .doc(_userId)
         .collection('transactions')
         .orderBy('timestamp')
         .get();
@@ -82,7 +103,9 @@ class WalletState extends ChangeNotifier {
   }
 
   Future<void> _saveUserFields() async {
-    await _firestore.collection('users').doc(_testUserId).set({
+    if (_userId == null) return;
+
+    await _firestore.collection('users').doc(_userId).set({
       'balance': _balance,
       'totalSessionSeconds': _totalSessionSeconds,
       'lastPackageLabel': _lastPackageLabel,
@@ -91,14 +114,6 @@ class WalletState extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
-  /// Now genuinely async (`Future<bool>` instead of bool), and the
-  /// Firestore writes are AWAITED inside a try/catch instead of being
-  /// fire-and-forget. This is a deliberate UX choice, not just "make
-  /// it safer": if the writes fail (no internet, brief Firestore
-  /// outage), we still let the purchase succeed LOCALLY — the user's
-  /// timer and balance work fine offline — but we flag hasSyncError
-  /// so the UI can warn them their purchase might not survive an app
-  /// restart until they reconnect.
   Future<bool> startSession({
     required double cost,
     required int durationSeconds,
@@ -128,21 +143,19 @@ class WalletState extends ChangeNotifier {
 
     try {
       await _saveUserFields();
-      await _firestore
-          .collection('users')
-          .doc(_testUserId)
-          .collection('transactions')
-          .add({
-        'packageLabel': newTransaction.packageLabel,
-        'cost': newTransaction.cost,
-        'timestamp': Timestamp.fromDate(newTransaction.timestamp),
-      });
+      if (_userId != null) {
+        await _firestore
+            .collection('users')
+            .doc(_userId)
+            .collection('transactions')
+            .add({
+          'packageLabel': newTransaction.packageLabel,
+          'cost': newTransaction.cost,
+          'timestamp': Timestamp.fromDate(newTransaction.timestamp),
+        });
+      }
       _hasSyncError = false;
     } catch (e) {
-      // The purchase still happened locally (balance already
-      // deducted, timer already started above) — we just couldn't
-      // confirm it saved to the cloud. Flag it rather than pretending
-      // everything's fine.
       _hasSyncError = true;
     }
 
