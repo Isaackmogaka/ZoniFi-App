@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import 'otp_screen.dart';
 
-/// A small, plain data model: one selectable country, its dial code,
-/// flag emoji, and how many digits a valid local number should have.
 class CountryCode {
   final String name;
   final String dialCode;
@@ -19,7 +18,6 @@ class CountryCode {
 }
 
 const List<CountryCode> _countries = [
-  // East Africa
   CountryCode(name: 'Kenya', dialCode: '+254', flag: '🇰🇪', expectedDigits: 9),
   CountryCode(name: 'Uganda', dialCode: '+256', flag: '🇺🇬', expectedDigits: 9),
   CountryCode(name: 'Tanzania', dialCode: '+255', flag: '🇹🇿', expectedDigits: 9),
@@ -28,40 +26,32 @@ const List<CountryCode> _countries = [
   CountryCode(name: 'South Sudan', dialCode: '+211', flag: '🇸🇸', expectedDigits: 9),
   CountryCode(name: 'Ethiopia', dialCode: '+251', flag: '🇪🇹', expectedDigits: 9),
   CountryCode(name: 'Somalia', dialCode: '+252', flag: '🇸🇴', expectedDigits: 8),
-  // West Africa
   CountryCode(name: 'Nigeria', dialCode: '+234', flag: '🇳🇬', expectedDigits: 10),
   CountryCode(name: 'Ghana', dialCode: '+233', flag: '🇬🇭', expectedDigits: 9),
   CountryCode(name: 'Senegal', dialCode: '+221', flag: '🇸🇳', expectedDigits: 9),
   CountryCode(name: 'Ivory Coast', dialCode: '+225', flag: '🇨🇮', expectedDigits: 10),
   CountryCode(name: 'Mali', dialCode: '+223', flag: '🇲🇱', expectedDigits: 8),
-  // Southern Africa
   CountryCode(name: 'South Africa', dialCode: '+27', flag: '🇿🇦', expectedDigits: 9),
   CountryCode(name: 'Zimbabwe', dialCode: '+263', flag: '🇿🇼', expectedDigits: 9),
   CountryCode(name: 'Zambia', dialCode: '+260', flag: '🇿🇲', expectedDigits: 9),
   CountryCode(name: 'Botswana', dialCode: '+267', flag: '🇧🇼', expectedDigits: 8),
   CountryCode(name: 'Namibia', dialCode: '+264', flag: '🇳🇦', expectedDigits: 9),
   CountryCode(name: 'Mozambique', dialCode: '+258', flag: '🇲🇿', expectedDigits: 9),
-  // North Africa
   CountryCode(name: 'Egypt', dialCode: '+20', flag: '🇪🇬', expectedDigits: 10),
   CountryCode(name: 'Morocco', dialCode: '+212', flag: '🇲🇦', expectedDigits: 9),
   CountryCode(name: 'Algeria', dialCode: '+213', flag: '🇩🇿', expectedDigits: 9),
   CountryCode(name: 'Tunisia', dialCode: '+216', flag: '🇹🇳', expectedDigits: 8),
-  // Middle East
   CountryCode(name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪', expectedDigits: 9),
   CountryCode(name: 'Saudi Arabia', dialCode: '+966', flag: '🇸🇦', expectedDigits: 9),
-  // Europe
   CountryCode(name: 'United Kingdom', dialCode: '+44', flag: '🇬🇧', expectedDigits: 10),
   CountryCode(name: 'Germany', dialCode: '+49', flag: '🇩🇪', expectedDigits: 10),
   CountryCode(name: 'France', dialCode: '+33', flag: '🇫🇷', expectedDigits: 9),
-  // Asia
   CountryCode(name: 'India', dialCode: '+91', flag: '🇮🇳', expectedDigits: 10),
   CountryCode(name: 'China', dialCode: '+86', flag: '🇨🇳', expectedDigits: 11),
   CountryCode(name: 'Pakistan', dialCode: '+92', flag: '🇵🇰', expectedDigits: 10),
-  // Americas
   CountryCode(name: 'United States', dialCode: '+1', flag: '🇺🇸', expectedDigits: 10),
   CountryCode(name: 'Canada', dialCode: '+1', flag: '🇨🇦', expectedDigits: 10),
   CountryCode(name: 'Brazil', dialCode: '+55', flag: '🇧🇷', expectedDigits: 11),
-  // Oceania
   CountryCode(name: 'Australia', dialCode: '+61', flag: '🇦🇺', expectedDigits: 9),
 ];
 
@@ -76,6 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
   CountryCode _selectedCountry = _countries[0];
   final TextEditingController _phoneController = TextEditingController();
   String _digitsOnly = '';
+  bool _isSending = false; // true while verifyPhoneNumber is in flight
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -98,6 +90,85 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   bool get _isValid => _digitsOnly.length == _selectedCountry.expectedDigits;
+
+  /// Triggers a REAL SMS via Firebase Phone Auth. This is genuinely
+  /// different from everything else we've built tonight — it's the
+  /// first place in the app that talks to a real external phone
+  /// number, not just Firestore.
+  Future<void> _sendCode() async {
+    setState(() {
+      _isSending = true;
+      _errorMessage = null;
+    });
+
+    final fullPhoneNumber = '${_selectedCountry.dialCode}$_digitsOnly';
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: fullPhoneNumber,
+
+      // On SOME Android devices, Google Play Services can detect and
+      // verify the incoming SMS automatically, without the user
+      // typing anything. When that happens, THIS callback fires
+      // directly with a ready-to-use credential — we sign in
+      // immediately and skip the OTP screen entirely, since there's
+      // nothing left for the user to type.
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        try {
+          final userCredential =
+              await FirebaseAuth.instance.signInWithCredential(credential);
+          if (mounted && userCredential.user != null) {
+            // We'll wire the actual navigation-to-Home-with-setUserId
+            // step once OtpScreen's matching logic exists — for now,
+            // this callback existing and attempting sign-in is the
+            // correct foundation.
+          }
+        } catch (e) {
+          setState(() {
+            _isSending = false;
+            _errorMessage = 'Automatic verification failed. Please try again.';
+          });
+        }
+      },
+
+      // Fires if the number is invalid, quota exceeded, or Firebase
+      // itself rejects the request for any reason. We show this
+      // directly to the user rather than letting them wait forever
+      // for a code that will never arrive.
+      verificationFailed: (FirebaseAuthException e) {
+        setState(() {
+          _isSending = false;
+          _errorMessage = e.message ?? 'Something went wrong. Please try again.';
+        });
+      },
+
+      // The SMS has genuinely been sent. verificationId is the
+      // "receipt" we need to carry forward to OtpScreen, so it can
+      // later combine it with whatever code the user types.
+      codeSent: (String verificationId, int? resendToken) {
+        setState(() {
+          _isSending = false;
+        });
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OtpScreen(
+                phoneNumber: fullPhoneNumber,
+                verificationId: verificationId,
+              ),
+            ),
+          );
+        }
+      },
+
+      // Fires if auto-retrieval simply times out (not an error) —
+      // we already have the verificationId from codeSent above, so
+      // there's nothing additional to do here.
+      codeAutoRetrievalTimeout: (String verificationId) {},
+
+      timeout: const Duration(seconds: 60),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         }).toList(),
                         selectedItemBuilder: (context) {
-                          // A more compact display for the CLOSED
-                          // dropdown (just flag + dial code), so it
-                          // doesn't crowd the row when a long country
-                          // name like "United Arab Emirates" is picked.
                           return _countries.map((country) {
                             return Row(
                               mainAxisSize: MainAxisSize.min,
@@ -218,6 +285,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: _isValid ? AppColors.teal : AppColors.slate400,
                 ),
               ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(fontSize: 12, color: AppColors.red),
+                ),
+              ],
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -228,20 +302,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     foregroundColor:
                         _isValid ? AppColors.navy : AppColors.slate400,
                   ),
-                  onPressed: !_isValid
-                      ? null
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OtpScreen(
-                                phoneNumber:
-                                    '${_selectedCountry.dialCode} $_digitsOnly',
-                              ),
-                            ),
-                          );
-                        },
-                  child: const Text('Send code'),
+                  onPressed: (!_isValid || _isSending) ? null : _sendCode,
+                  child: _isSending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Send code'),
                 ),
               ),
             ],
