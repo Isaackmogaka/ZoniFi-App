@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../state/wallet_state.dart';
 import 'home_screen.dart';
 
-/// OtpScreen: now requires the phone number from LoginScreen, so the
-/// "Code sent to..." text reflects what the user actually entered,
-/// instead of a hardcoded placeholder.
+/// OtpScreen: now requires a verificationId from LoginScreen — the
+/// "receipt" proving an SMS was genuinely requested for this number.
+/// Combined with whatever the user types, this is what lets us check
+/// the code for real against Firebase, instead of accepting any 6
+/// digits like our test version did.
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
+  final String verificationId;
 
-  const OtpScreen({super.key, required this.phoneNumber});
+  const OtpScreen({
+    super.key,
+    required this.phoneNumber,
+    required this.verificationId,
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -19,6 +29,8 @@ class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  bool _isVerifying = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -31,38 +43,95 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  /// True only when every one of the 6 boxes has a digit in it.
   bool get _isComplete =>
       _controllers.every((controller) => controller.text.isNotEmpty);
 
-  /// Called automatically the instant the 6th digit lands — no manual
-  /// "Verify" tap needed. In Phase 1/2 scope, this still just
-  /// navigates to Home; real code-checking against Firebase comes
-  /// once billing/Blaze is sorted for real SMS.
-  void _autoVerify() {
-    HapticFeedback.mediumImpact();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+  String get _enteredCode => _controllers.map((c) => c.text).join();
+
+  /// The real verification: combine the verificationId (proof an SMS
+  /// was requested) with what the user typed into ONE credential
+  /// object, then ask Firebase to check it. This can genuinely fail
+  /// now — wrong code, expired code — unlike our test version.
+  Future<void> _verifyCode() async {
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: widget.verificationId,
+        smsCode: _enteredCode,
+      );
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception('Sign-in succeeded but no user was returned.');
+      }
+
+      HapticFeedback.mediumImpact();
+
+      // This is the real handoff moment: WalletState now knows WHICH
+      // real, permanent user this is, and loads (or creates) their
+      // actual Firestore data — no more shared test_user_1.
+      if (mounted) {
+        await context.read<WalletState>().setUserId(user.uid);
+      }
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Genuinely wrong or expired code lands here. We clear the
+      // boxes and let the user try again, rather than letting them
+      // through on bad input.
+      HapticFeedback.vibrate();
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = e.code == 'invalid-verification-code'
+            ? 'Incorrect code. Please try again.'
+            : (e.message ?? 'Verification failed. Please try again.');
+        for (final controller in _controllers) {
+          controller.clear();
+        }
+      });
+      FocusScope.of(context).requestFocus(_focusNodes[0]);
+    } catch (e) {
+      HapticFeedback.vibrate();
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Something went wrong. Please try again.';
+      });
+    }
   }
 
-  /// Clears all 6 boxes, refocuses the first one, and gives the user
-  /// clear feedback that a new code was "sent" — real SMS resending
-  /// logic is Phase 5/6 work once Firebase Phone Auth is fully wired,
-  /// but the UI behavior itself is genuine now, not a dead link.
   void _resendCode() {
     HapticFeedback.lightImpact();
     for (final controller in _controllers) {
       controller.clear();
     }
+    setState(() {
+      _errorMessage = null;
+    });
     FocusScope.of(context).requestFocus(_focusNodes[0]);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('A new code has been sent'),
-        duration: Duration(seconds: 2),
+        content: Text(
+          'To resend, go back and tap "Send code" again.',
+        ),
+        duration: Duration(seconds: 3),
       ),
     );
+    // NOTE: a fuller implementation would re-call verifyPhoneNumber
+    // directly from here using the resendToken Firebase provides —
+    // kept simple for now by directing the user back to LoginScreen,
+    // which already has working send logic.
   }
 
   @override
@@ -101,16 +170,25 @@ class _OtpScreenState extends State<OtpScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) => _buildDigitBox(index)),
               ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(fontSize: 12, color: AppColors.red),
+                ),
+              ],
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  // Still tappable manually too, in case someone
-                  // prefers pressing it rather than relying on
-                  // auto-advance — but disabled until complete, since
-                  // there's nothing valid to verify otherwise.
-                  onPressed: !_isComplete ? null : _autoVerify,
-                  child: const Text('Verify'),
+                  onPressed: (!_isComplete || _isVerifying) ? null : _verifyCode,
+                  child: _isVerifying
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Verify'),
                 ),
               ),
               const SizedBox(height: 16),
@@ -165,21 +243,11 @@ class _OtpScreenState extends State<OtpScreen> {
             FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
           }
 
-          // Check completeness on EVERY keystroke (not just the last
-          // box), since the user could type out of order or paste —
-          // setState() triggers here so the Verify button's
-          // enabled/disabled state updates live too.
           setState(() {});
 
-          // The instant all 6 are filled, auto-advance — no manual
-          // tap needed. We check this after the setState above so
-          // _isComplete reflects the very latest keystroke.
           if (_isComplete) {
-            // Unfocus the keyboard first, since we're about to
-            // navigate away — leaving it focused can cause a visual
-            // flicker as the new screen builds underneath it.
             FocusScope.of(context).unfocus();
-            _autoVerify();
+            _verifyCode();
           }
         },
       ),
