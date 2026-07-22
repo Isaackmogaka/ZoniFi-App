@@ -101,7 +101,9 @@ class _OtpScreenState extends State<OtpScreen> {
           controller.clear();
         }
       });
-      FocusScope.of(context).requestFocus(_focusNodes[0]);
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_focusNodes[0]);
+      }
     } catch (e) {
       HapticFeedback.vibrate();
       setState(() {
